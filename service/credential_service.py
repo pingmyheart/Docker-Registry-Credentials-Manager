@@ -3,6 +3,8 @@ import logging
 import bcrypt
 
 from configuration import EnvironmentConfiguration
+from dto.credential_controller_request import CreateNewUserRequest
+from dto.credential_service_response import GetAllUsersResponse, DeleteUserResponse, SaveNewUserResponse
 
 
 class CredentialService:
@@ -10,7 +12,7 @@ class CredentialService:
         self.env = env
         self.log = logging.getLogger(__name__)
 
-    def get_all_users(self) -> list:
+    def get_all_users(self) -> GetAllUsersResponse:
         htpasswd_file_path = self.env.get('HTPASSWD_FILE_PATH')
         self.log.info(f"Reading htpasswd file from: {htpasswd_file_path}")
         try:
@@ -21,15 +23,19 @@ class CredentialService:
                         username = line.split(':')[0].strip()
                         users.append(username)
                 self.log.info(f"Found users: {users}")
-                return users
+                return GetAllUsersResponse(success=True,
+                                           message="OK",
+                                           users=users)
         except FileNotFoundError:
             self.log.error(f"htpasswd file not found at: {htpasswd_file_path}")
-            return []
+            return GetAllUsersResponse(success=False,
+                                       message=f"htpasswd file not found at: {htpasswd_file_path}")
         except Exception as e:
             self.log.error(f"Error reading htpasswd file: {e}")
-            return []
+            return GetAllUsersResponse(success=False,
+                                       message=f"Error reading htpasswd file: {e}")
 
-    def delete_user(self, username: str) -> list:
+    def delete_user(self, username: str) -> DeleteUserResponse:
         htpasswd_file_path = self.env.get('HTPASSWD_FILE_PATH')
         self.log.info(f"Attempting to delete user '{username}' from htpasswd file at: {htpasswd_file_path}")
         try:
@@ -45,33 +51,43 @@ class CredentialService:
                     file.write(line)
                 if not user_deleted:
                     self.log.warning(f"User '{username}' not found in htpasswd file.")
-                return [username] if user_deleted else []
+                return DeleteUserResponse(success=user_deleted,
+                                          message="OK" if user_deleted else f"User '{username}' not found.",
+                                          deleted_user=username if user_deleted else None)
         except FileNotFoundError:
             self.log.error(f"htpasswd file not found at: {htpasswd_file_path}")
-            return []
+            return DeleteUserResponse(success=False,
+                                      message=f"htpasswd file not found at: {htpasswd_file_path}")
         except Exception as e:
             self.log.error(f"Error deleting user from htpasswd file: {e}")
-            return [False]
+            return DeleteUserResponse(success=False,
+                                      message=f"Error deleting user from htpasswd file: {e}")
 
-    def save_new_user(self, username: str, password: str) -> list:
+    def save_new_user(self, service_request: CreateNewUserRequest) -> SaveNewUserResponse:
         # check if user already exists
-        if username in self.get_all_users():
-            self.log.warning(f"User '{username}' already exists. Cannot create duplicate user.")
-            return []
+        if service_request.username in self.get_all_users().users:
+            self.log.warning(f"User '{service_request.username}' already exists. Cannot create duplicate user.")
+            return SaveNewUserResponse(success=False,
+                                       message=f"User '{service_request.username}' already exists.")
 
         # Hash the password using bcrypt
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        self.log.info(f"Password for user '{username}' hashed successfully.")
+        hashed_password = bcrypt.hashpw(service_request.password.encode('utf-8'), bcrypt.gensalt())
+        self.log.info(f"Password for user '{service_request.username}' hashed successfully.")
         htpasswd_file_path = self.env.get('HTPASSWD_FILE_PATH')
-        self.log.info(f"Attempting to save new user '{username}' to htpasswd file at: {htpasswd_file_path}")
+        self.log.info(
+            f"Attempting to save new user '{service_request.username}' to htpasswd file at: {htpasswd_file_path}")
         try:
             with open(htpasswd_file_path, 'a') as file:
-                file.write(f"{username}:{hashed_password.decode()}\n")
-            self.log.info(f"User '{username}' successfully added to htpasswd file.")
-            return [username]
+                file.write(f"{service_request.username}:{hashed_password.decode()}\n")
+            self.log.info(f"User '{service_request.username}' successfully added to htpasswd file.")
+            return SaveNewUserResponse(success=True,
+                                       message="OK",
+                                       created_user=service_request.username)
         except FileNotFoundError:
             self.log.error(f"htpasswd file not found at: {htpasswd_file_path}")
-            return []
+            return SaveNewUserResponse(success=False,
+                                       message=f"htpasswd file not found at: {htpasswd_file_path}")
         except Exception as e:
             self.log.error(f"Error saving new user to htpasswd file: {e}")
-            return []
+            return SaveNewUserResponse(success=False,
+                                       message=f"Error saving new user to htpasswd file: {e}")
