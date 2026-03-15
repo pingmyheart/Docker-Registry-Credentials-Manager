@@ -1,0 +1,3 @@
+from configuration.environment_configuration import EnvironmentConfiguration
+
+environment_configuration_bean = EnvironmentConfiguration()

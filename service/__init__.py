@@ -1,0 +1,4 @@
+from configuration import environment_configuration_bean
+from service.credential_service import CredentialService
+
+credential_service_bean = CredentialService(env=environment_configuration_bean)
