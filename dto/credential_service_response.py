@@ -13,3 +13,7 @@ class GetAllUsersResponse(BaseResponse):
 
 class SaveNewUserResponse(BaseResponse):
     created_user: Optional[str] = None
+
+
+class ResetUserPasswordResponse(BaseResponse):
+    updated_user: Optional[str] = None

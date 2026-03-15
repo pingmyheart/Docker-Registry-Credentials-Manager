@@ -3,8 +3,9 @@ import logging
 import bcrypt
 
 from configuration import EnvironmentConfiguration
-from dto.credential_controller_request import CreateNewUserRequest
-from dto.credential_service_response import GetAllUsersResponse, DeleteUserResponse, SaveNewUserResponse
+from dto.credential_controller_request import CreateNewUserRequest, ResetUserPasswordRequest
+from dto.credential_service_response import GetAllUsersResponse, DeleteUserResponse, SaveNewUserResponse, \
+    ResetUserPasswordResponse
 
 
 class CredentialService:
@@ -91,3 +92,29 @@ class CredentialService:
             self.log.error(f"Error saving new user to htpasswd file: {e}")
             return SaveNewUserResponse(success=False,
                                        message=f"Error saving new user to htpasswd file: {e}")
+
+    def reset_user_password(self, service_request: ResetUserPasswordRequest) -> ResetUserPasswordResponse:
+        # check if user exists
+        if service_request.username not in self.get_all_users().users:
+            self.log.warning(f"User '{service_request.username}' does not exist. Cannot reset password.")
+            return ResetUserPasswordResponse(success=False,
+                                             message=f"User '{service_request.username}' does not exist.")
+
+        # delete the user
+        response = self.delete_user(username=service_request.username)
+        if not response.success:
+            self.log.error(f"Failed to delete user '{service_request.username}' for password reset: {response.message}")
+            return ResetUserPasswordResponse(success=False,
+                                             message=f"Failed to delete user '{service_request.username}' for password reset: {response.message}")
+
+        # create new user
+        response = self.save_new_user(service_request=CreateNewUserRequest(username=service_request.username,
+                                                                           password=service_request.password))
+        if not response.success:
+            self.log.error(f"Failed to create user '{service_request.username}' for password reset: {response.message}")
+            return ResetUserPasswordResponse(success=False,
+                                             message=f"Failed to create user '{service_request.username}' for password reset: {response.message}")
+
+        return ResetUserPasswordResponse(success=True,
+                                         message="OK",
+                                         updated_user=service_request.username)
