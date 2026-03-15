@@ -36,7 +36,7 @@ access to private Docker images.
 1. Clone the repository
 
 ```bash
-1. git clone https://github.com/pingmyheart/Docker-Registry-Credentials-Manager.git
+git clone https://github.com/pingmyheart/Docker-Registry-Credentials-Manager.git
 cd Docker-Registry-Credentials-Manager
 python3 -m venv venv
 source venv/bin/activate
