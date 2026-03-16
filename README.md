@@ -20,6 +20,8 @@ access to private Docker images.
 
 - 🔐 **User Creation:** Create users with unique usernames and passwords.
 - 🔐 **User Deletion:** Delete users when access is no longer needed.
+- 🔐 **User Reset Password:** Reset user password when needed.
+- 🔐 **User Listing:** List all existing users and their details.
 - 🔒 **Secure Credential Storage:** Store credentials securely in a htpasswd file shared with registry config.
 
 ## 🛠️ Getting Started
@@ -110,6 +112,8 @@ auth:
 
 ## 📚 Usage
 
+## Curl Based Usage
+
 ### Create new user
 
 ```bash
@@ -134,3 +138,19 @@ curl --location --request DELETE 'localhost:5000/credential/users/mysuperusernam
 curl --location --request GET 'localhost:5000/credential/users' \
 --header 'Content-Type: application/json' \
 ```
+
+### Reset user password
+
+```bash
+curl --location --request PUT 'localhost:5000/credential/users' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "username": "mysuperusername",
+    "password": "mysuperpassword"
+}'
+```
+
+## Web UI Usage
+
+1. Open your web browser and navigate to `http://localhost:5000`.
+2. Use the provided interface to create, delete, list, and reset user credentials for your private Docker registry.
