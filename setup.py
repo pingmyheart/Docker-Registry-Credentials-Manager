@@ -7,6 +7,6 @@ warnings.filterwarnings("ignore")
 
 setup(
     name='docker-registry-credentials-manager',
-    version='0.0.2.dev0',
+    version='0.0.2',
     packages=find_packages()
 )
